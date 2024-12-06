@@ -21,10 +21,9 @@ class CurriculumAnalyzer:
                 'strategic planning', 'analytical skills'
             ]
         }
-        self.stop_words = set([
-            'the', 'and', 'is', 'in', 'to', 'of', 'a', 'on', 'for', 'with', 'by',
-            'at', 'an', 'this', 'that', 'as', 'it', 'from', 'or', 'be', 'are'
-        ])
+        self.stop_words = {'the', 'and', 'is', 'in', 'to', 'of', 'a', 'on', 'for',
+                           'with', 'by', 'at', 'an', 'this',
+                           'that', 'as', 'it', 'from', 'or', 'be', 'are'}
 
     def _extract_text(self):
         """Extract text from PDF"""
