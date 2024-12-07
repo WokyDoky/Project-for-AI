@@ -216,5 +216,5 @@ class DiagnosticAgentGUI:
 # Usage
 if __name__ == "__main__":
     # Replace with your actual data path
-    agent_gui = DiagnosticAgentGUI('C:/Users/jdben/Downloads/SymbiPredict/SymbiPredict/symbipredict_2022.csv')
+    agent_gui = DiagnosticAgentGUI('symbipredict_2022.csv')
     agent_gui.run()
