@@ -1,7 +1,8 @@
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
 import pandas as pd
 import numpy as np
+import ttkbootstrap as tb
 
 
 class DiagnosticAgentGUI:
@@ -15,10 +16,10 @@ class DiagnosticAgentGUI:
         self.prior_probs = self.calculate_prior_probs()
         self.conditional_probs = self.calculate_conditional_probs()
 
-        # Setup main window
-        self.root = tk.Tk()
+        # Setup main window with dark theme
+        self.root = tb.Window(themename="darkly")  # Using a dark theme
         self.root.title("Diagnostic Agent")
-        self.root.geometry("600x500")
+        self.root.geometry("700x600")
 
         # Symptom tracking
         self.observed_symptoms = {}
@@ -73,139 +74,117 @@ class DiagnosticAgentGUI:
         return max(symptom_variance, key=symptom_variance.get)
 
     def setup_keyboard_bindings(self):
-        # Bind Left Arrow to Yes (1)
         self.root.bind('<Left>', lambda event: self.record_symptom(1))
-        # Bind Right Arrow to No (0)
         self.root.bind('<Right>', lambda event: self.record_symptom(0))
-        # Bind End key to show final diagnosis
         self.root.bind('<End>', lambda event: self.show_final_diagnosis())
 
     def setup_gui(self):
+        # Main container frame
+        container = ttk.Frame(self.root, padding=20)
+        container.pack(expand=True, fill="both")
+
         # Question Label
-        self.question_label = tk.Label(self.root, text="", wraplength=400, font=("Arial", 14))
+        self.question_label = ttk.Label(
+            container,
+            text="",
+            wraplength=500,
+            font=("Helvetica", 16, "bold"),
+            anchor="center",
+            style="info.TLabel"
+        )
         self.question_label.pack(pady=20)
 
-        # Keyboard Instructions Label
-        self.instructions_label = tk.Label(
-            self.root,
-            text="Use Left Arrow for Yes, Right Arrow for No, End to finish",
-            font=("Arial", 10)
-        )
-        self.instructions_label.pack(pady=5)
-
         # Button Frame
-        button_frame = tk.Frame(self.root)
+        button_frame = ttk.Frame(container)
         button_frame.pack(pady=10)
 
         # Yes Button
-        self.yes_button = tk.Button(button_frame, text="Yes (Left Arrow)", command=lambda: self.record_symptom(1),
-                                    width=15)
+        self.yes_button = ttk.Button(
+            button_frame,
+            text="Yes (Left Arrow)",
+            command=lambda: self.record_symptom(1),
+            style="success.TButton",
+            width=20
+        )
         self.yes_button.pack(side=tk.LEFT, padx=10)
 
         # No Button
-        self.no_button = tk.Button(button_frame, text="No (Right Arrow)", command=lambda: self.record_symptom(0),
-                                   width=15)
+        self.no_button = ttk.Button(
+            button_frame,
+            text="No (Right Arrow)",
+            command=lambda: self.record_symptom(0),
+            style="danger.TButton",
+            width=20
+        )
         self.no_button.pack(side=tk.LEFT, padx=10)
 
         # End Questionnaire Button
-        self.end_button = tk.Button(button_frame, text="End Questionnaire (End Key)", command=self.show_final_diagnosis,
-                                    width=20)
+        self.end_button = ttk.Button(
+            button_frame,
+            text="End Questionnaire (End Key)",
+            command=self.show_final_diagnosis,
+            style="warning.TButton",
+            width=25
+        )
         self.end_button.pack(side=tk.LEFT, padx=10)
 
         # Results Frame
-        self.results_frame = tk.Frame(self.root)
-        self.results_frame.pack(pady=10, expand=True, fill='both')
+        self.results_frame = ttk.Frame(container)
+        self.results_frame.pack(pady=10, expand=True, fill="both")
 
         # Start the diagnostic process
         self.ask_next_question()
 
     def ask_next_question(self):
-        # Select next symptom to ask about
         next_symptom = self.select_next_question(self.asked_symptoms)
-
         if next_symptom is None:
             self.show_final_diagnosis()
             return
-
-        # Update question label
         formatted_symptom = next_symptom.replace('_', ' ').capitalize()
         self.question_label.config(text=f"Do you have {formatted_symptom}?")
 
     def record_symptom(self, value):
-        # Check if buttons are active
         if (self.yes_button['state'] == tk.DISABLED or
                 self.no_button['state'] == tk.DISABLED):
             return
-
-        # Get current symptom
         current_symptom = self.select_next_question(self.asked_symptoms)
-
         if current_symptom is None:
             return
-
-        # Record symptom
         self.observed_symptoms[current_symptom] = value
         self.asked_symptoms.add(current_symptom)
-
-        # Calculate current probabilities
         probabilities = self.infer_condition(self.observed_symptoms)
         most_likely_condition = max(probabilities, key=probabilities.get)
-
-        # Clear previous results
         for widget in self.results_frame.winfo_children():
             widget.destroy()
-
-        # Show current most likely condition
-        current_result_label = tk.Label(
+        current_result_label = ttk.Label(
             self.results_frame,
             text=f"Most likely condition: {most_likely_condition}\n" +
                  f"Probability: {probabilities[most_likely_condition]:.2f}",
-            font=("Arial", 12)
+            font=("Helvetica", 12),
+            style="info.TLabel"
         )
         current_result_label.pack()
-
-        # Ask next question
         self.ask_next_question()
 
     def show_final_diagnosis(self):
-        # Disable buttons
         self.yes_button.config(state=tk.DISABLED)
         self.no_button.config(state=tk.DISABLED)
         self.end_button.config(state=tk.DISABLED)
-
-        # Clear previous results
         for widget in self.results_frame.winfo_children():
             widget.destroy()
-
-        # Calculate final probabilities
         probabilities = self.infer_condition(self.observed_symptoms)
-
-        # Sort conditions by probability
         sorted_conditions = sorted(probabilities.items(), key=lambda x: x[1], reverse=True)
-
-        # Show final diagnosis results
         self.question_label.config(text="Final Diagnosis")
-        self.instructions_label.config(text="")  # Clear instructions
-
-        # Create a treeview for results
         columns = ('Condition', 'Probability')
         results_tree = ttk.Treeview(self.results_frame, columns=columns, show='headings')
         results_tree.heading('Condition', text='Condition')
         results_tree.heading('Probability', text='Probability')
-
-        # Configure column widths
         results_tree.column('Condition', width=400, anchor='w')
         results_tree.column('Probability', width=100, anchor='e')
-
-        # Insert all conditions with their probabilities
         for condition, prob in sorted_conditions:
             results_tree.insert('', 'end', values=(condition, f"{prob:.4f}"))
-
-        # Add scrollbar
         scrollbar = ttk.Scrollbar(self.results_frame, orient=tk.VERTICAL, command=results_tree.yview)
         results_tree.configure(yscroll=scrollbar.set)
-
-        # Pack treeview and scrollbar
         results_tree.pack(side=tk.LEFT, expand=True, fill='both')
         scrollbar.pack(side=tk.RIGHT, fill='y')
 
@@ -215,6 +194,5 @@ class DiagnosticAgentGUI:
 
 # Usage
 if __name__ == "__main__":
-    # Replace with your actual data path
     agent_gui = DiagnosticAgentGUI('symbipredict_2022.csv')
     agent_gui.run()
